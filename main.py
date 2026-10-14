@@ -2,6 +2,7 @@ import os
 from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
+from faker import Faker
 from sqlalchemy import (
     Column,
     Date,
@@ -10,9 +11,13 @@ from sqlalchemy import (
     String,
     Table,
     create_engine,
+    insert,
+    text,
 )
 
 TABLE_NAME = "personas_manuel"
+TOTAL_REGISTROS = 100_000
+TAMANO_LOTE = 5_000
 
 
 def get_engine():
@@ -45,16 +50,52 @@ def define_table(metadata):
         Column("empresa", String(150)),
         Column("profesion", String(150)),
     )
+    
+
+def generar_personas(fake, cantidad):
+    """Genera una lista de diccionarios con datos falsos"""
+    personas = []
+    for _ in range(cantidad):
+        personas.append(
+            {
+                "nombre": fake.first_name(),
+                "apellido": fake.last_name(),
+                "correo": fake.email(),
+                "telefono": fake.phone_number(),
+                "fecha_nacimiento": fake.date_of_birth(minimum_age=18, maximum_age=90),
+                "ciudad": fake.city(),
+                "direccion": fake.address().replace("\n", ", "),
+                "empresa": fake.company(),
+                "profesion": fake.job(),
+            }
+        )
+    return personas
 
 
 def main():
     engine = get_engine()
     metadata = MetaData()
-    define_table(metadata)
+    tabla = define_table(metadata)
 
     # Crea la tabla solo si no existe
     metadata.create_all(engine)
     print(f"Tabla '{TABLE_NAME}' lista.")
+
+    fake = Faker("es_CO")
+
+    # Vacía la tabla para que ejecutar el script varias veces no duplique datos
+    with engine.begin() as conn:
+        conn.execute(text(f"TRUNCATE TABLE {TABLE_NAME}"))
+
+    insertados = 0
+    while insertados < TOTAL_REGISTROS:
+        lote = generar_personas(fake, TAMANO_LOTE)
+        with engine.begin() as conn:
+            conn.execute(insert(tabla), lote)
+        insertados += TAMANO_LOTE
+        print(f"Insertados {insertados} de {TOTAL_REGISTROS}")
+
+    print("Inserción completada.")
 
 
 if __name__ == "__main__":
