@@ -2,7 +2,17 @@ import os
 from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, text
+from sqlalchemy import (
+    Column,
+    Date,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    create_engine,
+)
+
+TABLE_NAME = "personas_manuel"
 
 
 def get_engine():
@@ -19,11 +29,32 @@ def get_engine():
     return create_engine(url)
 
 
+def define_table(metadata):
+    """Define la estructura de la tabla personas_manuel"""
+    return Table(
+        TABLE_NAME,
+        metadata,
+        Column("id", Integer, primary_key=True, autoincrement=True),
+        Column("nombre", String(100), nullable=False),
+        Column("apellido", String(100), nullable=False),
+        Column("correo", String(150)),
+        Column("telefono", String(50)),
+        Column("fecha_nacimiento", Date),
+        Column("ciudad", String(100)),
+        Column("direccion", String(255)),
+        Column("empresa", String(150)),
+        Column("profesion", String(150)),
+    )
+
+
 def main():
     engine = get_engine()
-    with engine.connect() as conn:
-        resultado = conn.execute(text("SELECT VERSION()"))
-        print("Conexión exitosa. Versión de MySQL:", resultado.scalar())
+    metadata = MetaData()
+    define_table(metadata)
+
+    # Crea la tabla solo si no existe
+    metadata.create_all(engine)
+    print(f"Tabla '{TABLE_NAME}' lista.")
 
 
 if __name__ == "__main__":
