@@ -1,0 +1,23 @@
+# Entorno virtual
+.venv/
+venv/
+env/
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+
+# Credenciales (NUNCA subir)
+.env
+
+# Archivos del editor y del sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Distribución y pruebas
+build/
+dist/
+*.egg-info/
+.pytest_cache/
